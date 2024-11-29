@@ -1,8 +1,8 @@
 import { db } from "../config/mongoDB.js";
 import { ObjectId } from "mongodb";
+import crypto from "crypto";
 import { hashPassword, comparePassword } from "../helpers/bcrypt.js";
 import { signToken } from "../helpers/jwt.js";
-import BuildingModel from "./building.js";
 
 export class User {
   // Mendapatkan koleksi Users
@@ -15,7 +15,7 @@ export class User {
     const collection = this.getCollection();
     return await collection.find().toArray();
   }
-  
+
   // Mendapatkan user berdasarkan ID
   static async getById(id) {
     const _id = new ObjectId(id);
@@ -27,7 +27,7 @@ export class User {
 
   // Register user baru
   static async register(body) {
-    const { fullName, email, password, role = "user", deviceId } = body;
+    const { fullName, email, password, role = "user" } = body;
     const collection = this.getCollection();
 
     // Validasi email unik
@@ -38,6 +38,7 @@ export class User {
     const hashedPassword = hashPassword(password);
 
     const defaultImgUrl = "https://example.com/default-profile.png";
+    const generatedDeviceId = crypto.randomBytes(16).toString("hex");
 
     // Data user baru
     const newUser = {
@@ -46,7 +47,7 @@ export class User {
       password: hashedPassword,
       role,
       imgUrl: defaultImgUrl, // Diisi otomatis
-      deviceId,
+      deviceId: generatedDeviceId, // Diisi otomatis
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -85,6 +86,14 @@ export class User {
       message: "Login successful",
       access_token,
     };
+  }
+
+  static async findByEmail(email) {
+    const collection = this.getCollection()
+    const findUser = await collection.findOne({ email: email })
+    // console.log(findUser, "<<<<<<<<<<< find user")
+    // if (!findUser) throw { name: 'NotFound' }
+    return findUser
   }
 
   static async updateUserLocation(deviceId, location) {
