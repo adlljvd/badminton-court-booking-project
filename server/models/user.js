@@ -28,7 +28,7 @@ export class User {
 
   // Register user baru
   static async register(body) {
-    const { fullName, email, password, role = "user" } = body;
+    const { fullName, email, password, role = "user", deviceId } = body;
     const collection = this.getCollection();
 
     // Validasi email unik
@@ -39,7 +39,6 @@ export class User {
     const hashedPassword = hashPassword(password);
 
     const defaultImgUrl = "https://example.com/default-profile.png";
-    const generatedDeviceId = crypto.randomBytes(16).toString("hex");
 
     // Data user baru
     const newUser = {
@@ -48,7 +47,7 @@ export class User {
       password: hashedPassword,
       role,
       imgUrl: defaultImgUrl, // Diisi otomatis
-      deviceId: generatedDeviceId, // Diisi otomatis
+      deviceId,
       createdAt: new Date(),
       updatedAt: new Date(),
       location: null, // Lokasi default null
