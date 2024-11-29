@@ -1,6 +1,5 @@
 import { db } from "../config/mongoDB.js";
 import { ObjectId } from "mongodb";
-import crypto from "crypto";
 import { hashPassword, comparePassword } from "../helpers/bcrypt.js";
 import { signToken } from "../helpers/jwt.js";
 import BuildingModel from "./building.js";
@@ -50,7 +49,6 @@ export class User {
       deviceId,
       createdAt: new Date(),
       updatedAt: new Date(),
-      location: null, // Lokasi default null
     };
 
     const result = await collection.insertOne(newUser);
