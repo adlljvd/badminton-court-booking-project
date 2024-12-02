@@ -1,5 +1,6 @@
 import express from "express"
 import { RoomController } from "../controllers/RoomsController.js"
+import { authorization } from "../middlewares/authorization.js"
 
 
 export default function roomRouter() {
@@ -7,8 +8,8 @@ export default function roomRouter() {
 
     router.get("/", RoomController.getAllRooms)
     router.post("/", RoomController.createRoom)
-    router.post("/", RoomController.deleteRoom)
     router.get("/:roomId", RoomController.getRoomById)
+    router.delete("/:roomId",authorization, RoomController.deleteRoom)
 
     return router
 }

@@ -13,7 +13,7 @@ router.post("/login", UserController.login)
 router.use(authentication)
 router.get("/profile")
 router.use("/room", roomRouter())
-router.use("/message", messageRouter)
+router.use("/message", messageRouter())
 
 
 

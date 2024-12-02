@@ -51,6 +51,10 @@ export const errorHandler = (err, req, res, next) => {
         status = 400
         message = 'Invalid Credentials'
     }
+    if (err.name === 'notUser') {
+        status = 403
+        message = 'You aren`t the user of this Room'
+    }
     res.status(status).json({
         message
     })

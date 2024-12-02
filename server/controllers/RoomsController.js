@@ -1,4 +1,5 @@
 import RoomModel from "../models/room.js";
+import { ObjectId } from "mongodb";
 export class RoomController {
     // Membuat room baru
     static async createRoom(req, res, next) {
@@ -9,7 +10,7 @@ export class RoomController {
 
             const {userId} = req.loginInfo; // User yang login
             // console.log(userId, "userr ini yang login")
-            const adminId = "6749c89fb1e40e4b8b37de9d"; // ID Admin tetap
+            const adminId = new ObjectId("6749c89fb1e40e4b8b37de9d"); 
 
             // Cek apakah room dengan courtId dan userId sudah ada
             const existingRoom = await RoomModel.getRoomByCourtAndParticipants(courtId, userId);
@@ -52,28 +53,30 @@ export class RoomController {
     }
 
     // Menghapus room hanya jika admin
-    static async deleteRoom(req, res, next) {
-        try {
-            const { roomId } = req.params;
-            const userRole = req.loginInfo.role; // Role user yang login
-
-            // Pastikan user adalah admin
-            if (userRole !== "admin") {
-                return res.status(403).json({ message: "Only admin can delete rooms" });
-            }
-
-            // Cek apakah room ada
-            const room = await RoomModel.getRoomById(roomId);
-            if (!room) {
-                return res.status(404).json({ message: "Room not found" });
-            }
-
-            // Hapus room
-            await RoomModel.deleteRoomById(roomId);
-
-            res.status(200).json({ message: "Room deleted successfully" });
-        } catch (err) {
-            next(err);
-        }
+// Menghapus room hanya jika admin
+static async deleteRoom(req, res, next) {
+    try {
+      const { roomId } = req.params; // Ambil roomId dari URL
+      console.log(`Deleting Room with ID: ${roomId}`);
+  
+      // Periksa apakah room dengan ID tersebut ada
+      const room = await RoomModel.getRoomById(roomId);
+  
+      if (!room) {
+        return res.status(404).json({ message: "Room not found" });
+      }
+  
+      // Hapus room
+      const success = await RoomModel.deleteRoomById(roomId);
+  
+      if (!success) {
+        return res.status(500).json({ message: "Failed to delete room" });
+      }
+  
+      res.status(200).json({ message: "Room deleted successfully" });
+    } catch (err) {
+      next(err);
     }
+  }
+  
 }
