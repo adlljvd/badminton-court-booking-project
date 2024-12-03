@@ -18,7 +18,7 @@ export class RoomController {
                 return res.status(400).json({ message: "Room already exists for this court with the same participants" });
             }
 
-            const newRoom = await RoomModel.addRoom(courtId, userId, adminId.UserId);
+            const newRoom = await RoomModel.addRoom(courtId, userId, adminId.userId);
 
             res.status(201).json({
                 message: "Room created successfully",
