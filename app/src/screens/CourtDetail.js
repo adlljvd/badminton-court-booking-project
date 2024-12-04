@@ -33,7 +33,7 @@ export default function CourtDetail() {
             setUserToken(token);
         }
         getToken();
-    },[])
+    },[userToken])
 
     useEffect(() => {
         getCourtById()
@@ -79,6 +79,15 @@ export default function CourtDetail() {
     ];
 
     const paymentMethods = [
+        {
+            id: 'card',
+            title: 'Credit/Debit Card',
+            options: [
+                { id: 'visa', name: 'Visa', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png' },
+                { id: 'mastercard', name: 'Mastercard', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png' },
+                { id: 'jcb', name: 'JCB', image:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/JCB_logo.svg/2560px-JCB_logo.svg.png' },
+            ]
+        },
         {
             id: 'ewallet',
             title: 'E-Wallet',
@@ -138,12 +147,29 @@ export default function CourtDetail() {
     };
 
     const handleNavigateToMaps = () => {
+        const coordinates = courtDetails?.buildingDetails?.location?.coordinates;
+        console.log('Raw coordinates:', coordinates);
+        
+        if (!coordinates || coordinates.length !== 2) {
+            console.log('Invalid coordinates format');
+            return;
+        }
+
+        const location = {
+            latitude: Number(coordinates[1]),
+            longitude: Number(coordinates[0])
+        };
+
+        console.log('Processed location:', location);
+
+        if (isNaN(location.latitude) || isNaN(location.longitude)) {
+            console.log('Invalid coordinate values');
+            return;
+        }
+
         navigation.navigate('Maps', {
-            location: {
-                latitude: courtDetails?.buildingDetails.location.coordinates.latitude,  // Sesuaikan dgn koordinat court
-                longitude: courtDetails?.buildingDetails.location.coordinates.longitude
-            },
-            courtName: court.name
+            location,
+            courtName: courtDetails?.buildingDetails?.name || 'Court'
         });
     };
 
@@ -169,12 +195,49 @@ export default function CourtDetail() {
         return paymentType === 'dp' ? discountedPrice * 0.5 : discountedPrice;
     };
 
-    const handlePaymentSuccess = () => {
-        setShowPaymentModal(false);
-        setSelectedPayment(null);
-        setPromoCode('');
-        setPromoDiscount(0);
-        navigation.replace('MainApp');
+    const handlePaymentSuccess = async () => {
+        try {
+            if(!userToken || userToken === "") {   
+                alert('Please login first');
+                return;
+            }
+
+            const payload = {
+                date: selectedDate,
+                selectedTime: selectedTimes,
+                paymentType: paymentType,
+                courtId: courtDetails._id,
+                price: getFinalAmount(),
+            };
+
+            console.log('Sending booking request with payload:', payload);
+            
+            const response = await axios.post(
+                `${process.env.EXPO_PUBLIC_BASE_URL}/booking`, 
+                payload, 
+                {
+                    headers: {
+                        Authorization: `Bearer ${userToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            console.log('Server response:', response.data);
+
+            if (!response.data.midtransUrl) {
+                throw new Error('No payment URL received from server');
+            }
+
+            setShowPaymentModal(false);
+            navigation.navigate('Midtrans', {
+                midtransUrl: response.data.midtransUrl,
+                midtransToken: response.data.midtransToken
+            });
+        } catch (error) {
+            console.error('Booking error:', error.response?.data || error.message);
+            alert(error.response?.data?.message || 'Failed to process booking. Please try again.');
+        }
     };
 
     if (isLoading || !courtDetails) {
@@ -231,7 +294,6 @@ export default function CourtDetail() {
                             <TouchableOpacity 
                                 style={styles.chatButton}
                                 onPress={() => navigation.navigate('ChatDetail', { 
-                                    chatId: `court_${court.id}`,
                                     name: `Admin ${courtDetails?.buildingDetails.name}`,
                                     adminId: courtDetails?.buildingDetails.userId,
                                     courtId: courtDetails?._id,
@@ -311,14 +373,15 @@ export default function CourtDetail() {
                             (!selectedDate || selectedTimes.length === 0) && styles.bookButtonDisabled
                         ]}
                         disabled={!selectedDate || selectedTimes.length === 0}
-                        onPress={() => setShowPaymentModal(true)}
+                        onPress={() => {
+                            setShowPaymentModal(true)
+                        }}
                     >
                         <Text style={styles.bookButtonText}>Book Now</Text>
                     </TouchableOpacity>
                 </View>
             </View>
 
-            {/* Booking Modal tetap sama */}
             <BookingModal
                 visible={showPaymentModal}
                 onClose={() => setShowPaymentModal(false)}

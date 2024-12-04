@@ -1,10 +1,12 @@
-import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
+import { View, StyleSheet, ScrollView, RefreshControl, Button } from "react-native";
 import { useState, useCallback } from "react";
 import Header from "../components/home/Header";
 import PromoBanner from "../components/home/PromoBanner";
 import FeaturedCourts from "../components/home/FeaturedCourts";
+import { useNavigation } from "@react-navigation/native";
 
 export default function Home() {
+    const navigation = useNavigation();
     const [refreshing, setRefreshing] = useState(false);
 
     const onRefresh = useCallback(() => {
